@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PCB Quality Gate · 缺陷智能质检台</title>
+<style>
+:root{--bg:#fafafa;--card:#fff;--ink:#18181b;--muted:#71717a;--line:#e4e4e7;--soft:#f4f4f5;--accent:#2563eb;
+--ok:#15803d;--ok-bg:#f0fdf4;--warn:#b45309;--warn-bg:#fffbeb;--bad:#b91c1c;--bad-bg:#fef2f2}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:"Segoe UI","Microsoft YaHei",system-ui,sans-serif;font-size:13px;line-height:1.5}
+.wrap{max-width:1320px;margin:0 auto;padding:24px}
+header{display:flex;align-items:baseline;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line);padding-bottom:14px;margin-bottom:20px;flex-wrap:wrap}
+.brand b{font-size:19px;letter-spacing:.5px}
+.brand span{color:var(--muted);font-size:12px;margin-left:10px}
+.tag{font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:20px;padding:4px 10px;background:var(--card)}
+.grid{display:grid;grid-template-columns:250px minmax(0,1fr) 300px;gap:16px}
+@media(max-width:1100px){.grid{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px}
+.card h3{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;font-weight:600}
+label.f{display:block;font-size:11px;color:var(--muted);margin:12px 0 5px}
+select,input[type=number]{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--ink);font-size:12px;font-family:inherit}
+button{font-family:inherit;font-size:12px;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:6px;padding:8px 10px;width:100%;transition:.15s;margin-top:6px}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+button.primary:hover{background:#1d4ed8}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{font-size:11px;padding:5px 9px;border:1px solid var(--line);border-radius:16px;cursor:pointer;background:var(--card)}
+.chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.views{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.view{border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--soft)}
+.view .cap{font-size:10px;color:var(--muted);padding:6px 9px;background:var(--card);border-bottom:1px solid var(--line);letter-spacing:.5px}
+.view img{width:100%;display:block;image-rendering:auto}
+.view.wide{grid-column:1/-1}
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:3px 9px;border-radius:14px;font-weight:600}
+.badge::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.b-ok{color:var(--ok);background:var(--ok-bg)}.b-bad{color:var(--bad);background:var(--bad-bg)}.b-warn{color:var(--warn);background:var(--warn-bg)}
+.b-gray{color:var(--muted);background:var(--soft)}
+.kv{display:flex;justify-content:space-between;font-size:12px;padding:6px 0;border-bottom:1px solid var(--line)}
+.kv b{font-variant-numeric:tabular-nums}
+.reason{font-size:11px;color:var(--muted);padding:4px 0;border-bottom:1px dashed var(--line)}
+.metric{display:grid;grid-template-columns:1fr;gap:6px;margin-top:8px}
+.mrow{display:grid;grid-template-columns:1fr 52px 52px 52px;gap:6px;font-size:11px;align-items:center;padding:5px 0;border-bottom:1px solid var(--line)}
+.mrow.head{color:var(--muted);font-size:10px;letter-spacing:.5px}
+.mrow b{text-align:right;font-variant-numeric:tabular-nums}
+.note{font-size:11px;color:var(--muted);line-height:1.7;margin-top:10px}
+.hint{font-size:11px;color:var(--muted);background:var(--soft);border:1px solid var(--line);border-radius:6px;padding:9px;margin-top:10px}
+.spin{color:var(--muted);font-size:12px;padding:20px;text-align:center}
+footer{margin-top:20px;font-size:11px;color:var(--muted);text-align:center;border-top:1px solid var(--line);padding-top:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand"><b>PCB Quality Gate</b><span>缺陷智能质检台 · 可解释判定层原型</span></div>
+    <div class="tag">v1.0.0 · 100% 本地计算</div>
+  </header>
+
+  <div class="grid">
+    <!-- 左：控制台 -->
+    <div class="card">
+      <h3>① 样本生成（可复现）</h3>
+      <label class="f">缺陷类型</label>
+      <div class="chips" id="kindChips"></div>
+      <label class="f">随机种子</label>
+      <input type="number" id="seed" value="1000">
+      <label class="f">缺陷难度</label>
+      <select id="difficulty">
+        <option value="easy">简单（缺陷大）</option>
+        <option value="normal" selected>正常</option>
+        <option value="hard">困难（缺陷小）</option>
+      </select>
+      <button class="primary" id="btnGen">生成样本并检测 →</button>
+
+      <h3 style="margin-top:20px">② 判定层参数</h3>
+      <label class="f">误报面积下限 (px)</label>
+      <input type="number" id="minArea" value="45">
+      <label class="f">贴边忽略宽度 (px)</label>
+      <input type="number" id="border" value="14">
+      <div class="hint">判定层：先按面积/贴边过滤误报，再按 IPC 严重度分级，最后给出板级 OK/NG 与逐条理由。</div>
+
+      <h3 style="margin-top:20px">③ 对照实验</h3>
+      <label class="f">每类样本数</label>
+      <input type="number" id="expN" value="20">
+      <button id="btnExp">运行三档对照 →</button>
+      <div class="note">基线（单色阈值） / 改进（参考差分） / 改进+判定层，同一批样本、同一 IoU 口径，保证对照公平。</div>
+    </div>
+
+    <!-- 中：可视化 -->
+    <div class="card">
+      <h3>检测结果 · 五视图对照</h3>
+      <div id="status" class="spin">点击左侧「生成样本并检测」开始</div>
+      <div class="views" id="views" style="display:none"></div>
+    </div>
+
+    <!-- 右：判定与指标 -->
+    <div class="card">
+      <h3>判定结论</h3>
+      <div id="verdictBox"><span class="badge b-gray">等待检测</span></div>
+      <div id="defectList" style="margin-top:10px"></div>
+      <h3 style="margin-top:18px">可解释判定理由</h3>
+      <div id="reasons"></div>
+
+      <h3 style="margin-top:18px">三档对照指标</h3>
+      <div class="metric" id="metrics"><div class="hint">运行对照实验后显示</div></div>
+      <div class="note" id="expNote"></div>
+    </div>
+  </div>
+
+  <footer>本工具为教学/竞赛原型，缺陷为程序化合成（对齐 PKU-Market-PCB 六类），评测口径见 README。实际产线须结合真实标准板、MTF 与工艺公差确认。</footer>
+</div>
+
+<script>
+const API="";
+let meta={defects:[]};
+let curKind="short";
+
+async function init(){
+  meta=await (await fetch(API+"/api/meta")).json();
+  const box=document.getElementById("kindChips");
+  box.innerHTML=meta.defects.map(d=>`<span class="chip ${d.k==curKind?'on':''}" data-k="${d.k}">${d.cn}</span>`).join("");
+  box.querySelectorAll(".chip").forEach(el=>el.onclick=()=>{
+    curKind=el.dataset.k;
+    box.querySelectorAll(".chip").forEach(x=>x.classList.toggle("on",x===el));
+  });
+}
+
+function policy(){
+  return {min_area:+document.getElementById("minArea").value||45,
+          ignore_border:+document.getElementById("border").value||14};
+}
+
+async function gen(){
+  const status=document.getElementById("status");
+  status.style.display="block"; status.textContent="检测中…";
+  const body={kind:curKind,seed:+document.getElementById("seed").value||1000,
+              difficulty:document.getElementById("difficulty").value,policy:policy()};
+  const r=await (await fetch(API+"/api/gen",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)})).json();
+  render(r);
+}
+
+function render(r){
+  document.getElementById("status").style.display="none";
+  const vw=document.getElementById("views"); vw.style.display="grid";
+  vw.innerHTML=Object.entries(r.views).map(([k,src],i)=>
+    `<div class="view ${i===0?'wide':''}"><div class="cap">${k}</div><img src="${src}"></div>`).join("");
+
+  const ok=r.verdict===r.truth;
+  document.getElementById("verdictBox").innerHTML=
+    `<span class="badge ${r.verdict==='NG'?'b-bad':'b-ok'}">板级判定 ${r.verdict}</span> `+
+    `<span class="badge ${ok?'b-ok':'b-bad'}">${ok?'与真值一致':'误判'}</span>`+
+    `<div class="note">真值 <b>${r.truth}</b> · 最高严重度 <b>${r.severity}</b></div>`;
+
+  document.getElementById("defectList").innerHTML=
+    `<div class="kv"><span>真值缺陷数</span><b>${r.defects.length}</b></div>`+
+    `<div class="kv"><span>基线检出</span><b>${r.baseline_count}</b></div>`+
+    `<div class="kv"><span>改进检出</span><b>${r.improved_count}</b></div>`+
+    `<div class="kv"><span>判定层采纳 / 过滤</span><b>${r.accepted_n} / ${r.rejected_n}</b></div>`+
+    r.defects.map(d=>`<div class="kv"><span>${d.type}</span><b>${d.sev}</b></div>`).join("");
+
+  document.getElementById("reasons").innerHTML=
+    r.reasons.map(x=>`<div class="reason">${x}</div>`).join("")||'<div class="note">无</div>';
+}
+
+async function experiment(){
+  const el=document.getElementById("metrics");
+  el.innerHTML='<div class="hint">运行中…</div>';
+  const body={config:{n:+document.getElementById("expN").value||20,difficulty:document.getElementById("difficulty").value,seed:1000}};
+  const r=await (await fetch(API+"/api/experiment",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)})).json();
+  const names={baseline:"基线·单色阈值",improved:"改进·参考差分",improved_decision:"改进+判定层"};
+  el.innerHTML=
+    `<div class="mrow head"><span>档位</span><b>召回</b><b>板级</b><b>F1</b></div>`+
+    r.results.map(x=>`<div class="mrow"><span>${names[x.mode]}</span><b>${(x.recall*100).toFixed(1)}%</b><b>${(x.board_acc*100).toFixed(1)}%</b><b>${x.f1.toFixed(2)}</b></div>`).join("");
+  const d=r.results[2],b=r.results[0];
+  document.getElementById("expNote").innerHTML=
+    `共 ${r.config.total_boards} 块板。判定层将板级准确率从基线 <b>${(b.board_acc*100).toFixed(1)}%</b> 提升到 <b>${(d.board_acc*100).toFixed(1)}%</b>，`+
+    `误判板 ${b.fn_board+b.fp_board} → ${d.fn_board+d.fp_board}；严重度判定准确率 ${(d.sev_acc*100).toFixed(1)}%。`;
+}
+
+document.getElementById("btnGen").onclick=gen;
+document.getElementById("btnExp").onclick=experiment;
+init();
+</script>
+</body>
+</html>
