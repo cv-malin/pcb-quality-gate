@@ -1,0 +1,81 @@
+{
+  "config": {
+    "n_per_type": 20,
+    "n_clean": 20,
+    "difficulty": "normal",
+    "seed0": 1000,
+    "total_boards": 140,
+    "iou_thr": 0.15
+  },
+  "results": [
+    {
+      "mode": "baseline",
+      "tp": 60,
+      "fp": 0,
+      "fn": 60,
+      "precision": 1.0,
+      "recall": 0.5,
+      "miss_rate": 0.5,
+      "false_alarm": 0.0,
+      "f1": 0.6667,
+      "board_acc": 0.2857,
+      "fn_board": 60,
+      "fp_board": 40,
+      "sev_acc": 0.0,
+      "per_class_recall": {
+        "missing_hole": 0.0,
+        "mouse_bite": 0.0,
+        "open_circuit": 0.0,
+        "short": 1.0,
+        "spur": 1.0,
+        "spurious_copper": 1.0
+      }
+    },
+    {
+      "mode": "improved",
+      "tp": 120,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "miss_rate": 0.0,
+      "false_alarm": 0.0,
+      "f1": 1.0,
+      "board_acc": 0.7143,
+      "fn_board": 0,
+      "fp_board": 40,
+      "sev_acc": 0.9833,
+      "per_class_recall": {
+        "missing_hole": 1.0,
+        "mouse_bite": 1.0,
+        "open_circuit": 1.0,
+        "short": 1.0,
+        "spur": 1.0,
+        "spurious_copper": 1.0
+      }
+    },
+    {
+      "mode": "improved_decision",
+      "tp": 120,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "miss_rate": 0.0,
+      "false_alarm": 0.0,
+      "f1": 1.0,
+      "board_acc": 0.9857,
+      "fn_board": 0,
+      "fp_board": 2,
+      "sev_acc": 0.9833,
+      "per_class_recall": {
+        "missing_hole": 1.0,
+        "mouse_bite": 1.0,
+        "open_circuit": 1.0,
+        "short": 1.0,
+        "spur": 1.0,
+        "spurious_copper": 1.0
+      }
+    }
+  ]
+}
